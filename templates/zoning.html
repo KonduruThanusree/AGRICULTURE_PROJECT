@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Field Zoning{% endblock %}
+
+{% block content %}
+
+<h1>Field Zoning 🗺️</h1>
+
+<div class="grid g2">
+
+    <div class="card">
+        <form id="form">
+
+            <label>Grid Rows</label>
+            <input name="rows" type="number" value="10">
+
+            <label>Grid Columns</label>
+            <input name="cols" type="number" value="12">
+
+            <label>Number of Zones</label>
+            <input name="zones" type="number" value="3">
+
+            <label>Random Seed</label>
+            <input name="seed" type="number" value="7">
+
+            <button type="submit">Create Zones</button>
+
+        </form>
+
+        <div id="map"></div>
+    </div>
+
+    <div class="card" id="result">
+        Results will appear here.
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const COLORS = ["#2e7d32", "#9ccc65", "#fdd835",
+                "#fb8c00", "#e53935", "#6a1b1a"];
+
+document.getElementById("form").addEventListener("submit", async e => {
+    e.preventDefault();
+
+    const out = document.getElementById("result");
+    const map = document.getElementById("map");
+
+    try {
+        const d = await postJSON("/api/zoning/analyze",
+                                formToObject(e.target));
+
+        const grid = Array.from(
+            {length: d.rows},
+            () => Array(d.cols).fill(null)
+        );
+
+        d.cells.forEach(c => {
+            grid[c.row][c.col] = c;
+        });
+
+        map.innerHTML = `
+            <div class="zonegrid"
+                 style="grid-template-columns:repeat(${d.cols},1fr)">
+                ${grid.flat().map(c =>
+                    c ? `<div style="background:${COLORS[c.zone-1]}"
+                              title="Zone ${c.zone}"></div>` : "<div></div>"
+                ).join("")}
+            </div>
+        `;
+
+        out.innerHTML = d.zones.map(z => `
+            <div class="card">
+                <h3>Zone ${z.zone} - ${esc(z.label)}</h3>
+                <p>NDVI: ${z.mean_ndvi}</p>
+                <p>Moisture: ${z.mean_moisture}%</p>
+                ${list(z.advice)}
+            </div>
+        `).join("");
+
+    } catch (err) {
+        showError(out, err);
+    }
+});
+</script>
+{% endblock %}

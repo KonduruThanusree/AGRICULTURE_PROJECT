@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AGRISENSE{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-container">
+
+    <h1>🌱 AGRISENSE Dashboard</h1>
+    <p>Smart Agriculture Monitoring System</p>
+
+    <!-- Statistics -->
+    <div class="stats-grid">
+
+        <div class="card">
+            <h3>Total Fields</h3>
+            <h2 id="total-fields">0</h2>
+        </div>
+
+        <div class="card">
+            <h3>Average Moisture</h3>
+            <h2 id="avg-moisture">0%</h2>
+        </div>
+
+        <div class="card">
+            <h3>Average Temperature</h3>
+            <h2 id="avg-temperature">0°C</h2>
+        </div>
+
+        <div class="card">
+            <h3>Average NDVI</h3>
+            <h2 id="avg-ndvi">0</h2>
+        </div>
+
+        <div class="card">
+            <h3>Total Alerts</h3>
+            <h2 id="total-alerts">0</h2>
+        </div>
+
+    </div>
+
+
+    <!-- Sensor Readings -->
+    <section class="dashboard-section">
+
+        <h2>📊 Field Sensor Readings</h2>
+
+        <div class="table-container">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Moisture (%)</th>
+                        <th>Temperature (°C)</th>
+                        <th>Humidity (%)</th>
+                        <th>Soil pH</th>
+                        <th>NDVI</th>
+                    </tr>
+                </thead>
+
+                <tbody id="sensor-table">
+                    <tr>
+                        <td colspan="6">Loading sensor data...</td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <!-- Alerts -->
+    <section class="dashboard-section">
+
+        <h2>⚠️ Agriculture Alerts</h2>
+
+        <div id="alerts-container">
+            Loading alerts...
+        </div>
+
+    </section>
+
+
+    <!-- Activity Summary -->
+    <section class="dashboard-section">
+
+        <h2>📈 Activity Summary</h2>
+
+        <div class="stats-grid">
+
+            <div class="card">
+                <h3>Disease Scans</h3>
+                <h2 id="disease-scans">0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Irrigation Runs</h3>
+                <h2 id="irrigation-runs">0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Yield Forecasts</h3>
+                <h2 id="yield-forecasts">0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Waste Records</h3>
+                <h2 id="waste-records">0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Recycling Plans</h3>
+                <h2 id="recycling-plans">0</h2>
+            </div>
+
+        </div>
+
+    </section>
+
+    <button onclick="loadDashboard()">🔄 Refresh Dashboard</button>
+
+</div>
+
+
+<style>
+.dashboard-container {
+    padding: 25px;
+}
+
+.dashboard-container h1 {
+    color: #216b36;
+    margin-bottom: 8px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 18px;
+    margin: 25px 0;
+}
+
+.card {
+    background: #ffffff;
+    padding: 22px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.10);
+    text-align: center;
+}
+
+.card h3 {
+    color: #555;
+    font-size: 15px;
+}
+
+.card h2 {
+    color: #238443;
+    font-size: 28px;
+}
+
+.dashboard-section {
+    margin-top: 35px;
+}
+
+.dashboard-section h2 {
+    color: #216b36;
+    margin-bottom: 18px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    padding: 13px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+th {
+    background: #238443;
+    color: white;
+}
+
+.alert {
+    padding: 14px;
+    margin: 10px 0;
+    border-radius: 8px;
+    background: #fff3cd;
+    border-left: 5px solid orange;
+}
+
+.alert.High {
+    background: #ffe0e0;
+    border-left-color: red;
+}
+
+.alert.Medium {
+    background: #fff3cd;
+    border-left-color: orange;
+}
+
+.dashboard-container button {
+    background: #238443;
+    color: white;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    margin-top: 25px;
+}
+
+.dashboard-container button:hover {
+    background: #155d2b;
+}
+</style>
+
+
+<script>
+
+async function loadDashboard() {
+
+    try {
+
+        const response = await fetch("/api/dashboard/summary");
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Unable to load dashboard");
+        }
+
+        const stats = data.stats;
+
+        document.getElementById("total-fields").textContent = stats.fields;
+        document.getElementById("avg-moisture").textContent = stats.avg_moisture + "%";
+        document.getElementById("avg-temperature").textContent = stats.avg_temperature + "°C";
+        document.getElementById("avg-ndvi").textContent = stats.avg_ndvi;
+        document.getElementById("total-alerts").textContent = stats.alerts;
+
+        document.getElementById("disease-scans").textContent = stats.disease_scans;
+        document.getElementById("irrigation-runs").textContent = stats.irrigation_runs;
+        document.getElementById("yield-forecasts").textContent = stats.yield_forecasts;
+        document.getElementById("waste-records").textContent = stats.waste_records;
+        document.getElementById("recycling-plans").textContent = stats.recycling_plans;
+
+
+        // Display sensor readings
+
+        const table = document.getElementById("sensor-table");
+
+        table.innerHTML = "";
+
+        data.fields.forEach(field => {
+
+            table.innerHTML += `
+                <tr>
+                    <td>${field.field}</td>
+                    <td>${field.moisture}</td>
+                    <td>${field.temperature}</td>
+                    <td>${field.humidity}</td>
+                    <td>${field.ph}</td>
+                    <td>${field.ndvi}</td>
+                </tr>
+            `;
+
+        });
+
+
+        // Display alerts
+
+        const alertBox = document.getElementById("alerts-container");
+
+        alertBox.innerHTML = "";
+
+        if (data.alerts.length === 0) {
+
+            alertBox.innerHTML = "<p>✅ No agriculture alerts. All fields look good!</p>";
+
+        } else {
+
+            data.alerts.forEach(alert => {
+
+                alertBox.innerHTML += `
+                    <div class="alert ${alert.level}">
+                        <strong>${alert.level}</strong> -
+                        ${alert.field}: ${alert.message}
+                    </div>
+                `;
+
+            });
+
+        }
+
+    } catch (error) {
+
+        document.getElementById("alerts-container").textContent =
+            "Error loading dashboard: " + error.message;
+
+    }
+
+}
+
+loadDashboard();
+
+</script>
+
+{% endblock %}

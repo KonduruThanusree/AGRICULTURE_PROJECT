@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Irrigation{% endblock %}
+
+{% block content %}
+
+<h1>Smart Irrigation 💧</h1>
+
+<div class="grid g2">
+
+    <div class="card">
+        <form id="form">
+
+            <label>Crop</label>
+            <select name="crop">
+                {% for c in crops %}
+                <option value="{{ c }}">{{ c|capitalize }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Growth Stage</label>
+            <select name="stage">
+                {% for s in stages %}
+                <option value="{{ s }}">{{ s|capitalize }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Soil Moisture (%)</label>
+            <input name="moisture" type="number" value="22">
+
+            <label>Temperature (°C)</label>
+            <input name="temperature" type="number" value="31">
+
+            <label>Humidity (%)</label>
+            <input name="humidity" type="number" value="55">
+
+            <label>Rain Forecast (mm)</label>
+            <input name="rain_forecast" type="number" value="0">
+
+            <label>Area (hectares)</label>
+            <input name="area_ha" type="number" value="2">
+
+            <label>Field</label>
+            <select name="field">
+                {% for f in fields %}
+                <option>{{ f }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Get Recommendation</button>
+        </form>
+    </div>
+
+    <div class="card" id="result">
+        Results will appear here.
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+bindForm("form", "/api/irrigation/recommend", d => `
+    <h2>${d.irrigate ? "💧 Irrigate Now" : "✅ No Irrigation Needed"}</h2>
+
+    <p>${esc(d.reason)}</p>
+
+    ${d.irrigate ? `
+        <h3>Water Required: ${d.amount_mm} mm</h3>
+        <p>Volume: ${d.volume_litres} litres</p>
+        <p>Best time: ${esc(d.best_time)}</p>
+    ` : ""}
+`);
+</script>
+{% endblock %}

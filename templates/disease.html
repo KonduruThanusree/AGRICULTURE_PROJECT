@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Disease Detection{% endblock %}
+
+{% block content %}
+
+<h1>Plant Disease Detection 🍃</h1>
+<p class="sub">Upload a leaf image for analysis.</p>
+
+<div class="grid g2">
+
+    <div class="card">
+        <form id="form">
+
+            <label>Select Leaf Image</label>
+
+            <input type="file" id="image" name="image"
+                   accept="image/png,image/jpeg,image/webp" required>
+
+            <img id="preview" style="display:none;max-width:100%;margin-top:15px">
+
+            <button type="submit">Analyse Image</button>
+
+        </form>
+    </div>
+
+    <div class="card" id="result">
+        <p class="muted">Analysis results will appear here.</p>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const input = document.getElementById("image");
+const preview = document.getElementById("preview");
+
+input.addEventListener("change", () => {
+    const file = input.files[0];
+
+    if (file) {
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = "block";
+    }
+});
+
+document.getElementById("form").addEventListener("submit", async e => {
+    e.preventDefault();
+
+    const out = document.getElementById("result");
+    out.innerHTML = "Analysing...";
+
+    try {
+        const data = await api("/api/disease/detect", {
+            method: "POST",
+            body: new FormData(e.target)
+        });
+
+        out.innerHTML = `
+            <h2>${esc(data.disease)}</h2>
+            <p>Severity: ${esc(data.severity)}</p>
+            <p>Confidence: ${Math.round(data.confidence * 100)}%</p>
+            <h3>Recommended Treatment</h3>
+            ${list(data.treatment)}
+        `;
+
+    } catch (err) {
+        showError(out, err);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Soil Intelligence{% endblock %}
+
+{% block content %}
+
+<h1>Soil Intelligence 🌱</h1>
+<p class="sub">Analyse soil nutrients and health.</p>
+
+<div class="grid g2">
+
+    <div class="card">
+        <form id="form">
+
+            <label>Crop</label>
+            <select name="crop">
+                {% for c in crops %}
+                <option value="{{ c }}">{{ c|capitalize }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Soil pH</label>
+            <input name="ph" type="number" step="0.1" value="6.2" required>
+
+            <label>Organic Matter (%)</label>
+            <input name="organic_matter" type="number" value="1.8">
+
+            <label>Nitrogen</label>
+            <input name="nitrogen" type="number" value="70" required>
+
+            <label>Phosphorus</label>
+            <input name="phosphorus" type="number" value="15" required>
+
+            <label>Potassium</label>
+            <input name="potassium" type="number" value="90" required>
+
+            <label>Moisture (%)</label>
+            <input name="moisture" type="number" value="32">
+
+            <button type="submit">Analyse Soil</button>
+
+        </form>
+    </div>
+
+    <div class="card" id="result">
+        Results will appear here.
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+bindForm("form", "/api/soil/analyze", d => `
+    <h2>Soil Score: ${d.score}/100</h2>
+    <h3>${esc(d.rating)}</h3>
+
+    <table>
+        <tr><th>Nutrient</th><th>Value</th><th>Target</th><th>Status</th></tr>
+        ${d.nutrients.map(n => `
+            <tr>
+                <td>${esc(n.nutrient)}</td>
+                <td>${n.value}</td>
+                <td>${n.target}</td>
+                <td>${badge(n.status)}</td>
+            </tr>
+        `).join("")}
+    </table>
+
+    <h3>Recommended Actions</h3>
+    ${list(d.actions)}
+    <p>${esc(d.note)}</p>
+`);
+</script>
+{% endblock %}

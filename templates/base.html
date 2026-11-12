@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>{% block title %}AGRISENSE{% endblock %}</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<nav>
+    <a class="brand" href="{{ url_for('index') }}">
+        🌱 AGRISENSE
+    </a>
+
+    <a class="link" href="{{ url_for('dashboard.page') }}">Dashboard</a>
+    <a class="link" href="{{ url_for('disease.disease_page') }}">Disease</a>
+    <a class="link" href="{{ url_for('soil.soil_page') }}">Soil</a>
+    <a class="link" href="{{ url_for('irrigation.irrigation_page') }}">Irrigation</a>
+    <a class="link" href="{{ url_for('yield_prediction.yield_page') }}">Yield</a>
+    <a class="link" href="{{ url_for('zoning.zoning_page') }}">Zoning</a>
+    <a class="link" href="{{ url_for('waste.waste_page') }}">Waste</a>
+    <a class="link" href="{{ url_for('recycling.recycling_page') }}">Recycling</a>
+</nav>
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<footer>
+    AGRISENSE | Smart Agriculture System
+</footer>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Organic Recycling | AGRISENSE{% endblock %}
+
+{% block content %}
+
+<style>
+.recycling-container {
+    max-width: 850px;
+    margin: 30px auto;
+    padding: 25px;
+}
+
+.recycling-card {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.recycling-card h2 {
+    color: #247a45;
+}
+
+.material-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.material-grid label {
+    font-weight: bold;
+}
+
+.material-grid input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.recycling-btn {
+    background: #247a45;
+    color: white;
+    padding: 13px 25px;
+    border: none;
+    border-radius: 8px;
+    margin-top: 25px;
+    cursor: pointer;
+}
+
+.recycling-btn:hover {
+    background: #185c32;
+}
+
+#result {
+    margin-top: 25px;
+    padding: 20px;
+    border-radius: 10px;
+    background: #edf8ef;
+    display: none;
+}
+
+#result h3 {
+    color: #247a45;
+}
+
+#error {
+    color: red;
+    margin-top: 15px;
+}
+</style>
+
+<div class="recycling-container">
+
+    <div class="recycling-card">
+
+        <h2>♻ Organic Waste Recycling</h2>
+
+        <p>
+            Enter the quantity of organic materials in tonnes.
+            AGRISENSE will estimate compost production and
+            carbon-nitrogen balance.
+        </p>
+
+        <form id="recyclingForm">
+
+            <div class="material-grid">
+
+                {% for key, label in materials.items() %}
+
+                <div>
+                    <label>{{ label }} (tonnes)</label>
+
+                    <input
+                        type="number"
+                        name="{{ key }}"
+                        min="0"
+                        step="0.1"
+                        value="0"
+                    >
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            <button type="submit" class="recycling-btn">
+                Calculate Recycling Plan
+            </button>
+
+        </form>
+
+        <p id="error"></p>
+
+        <div id="result">
+
+            <h3>Recycling Results</h3>
+
+            <p>Total Organic Waste:
+                <strong id="total"></strong> tonnes
+            </p>
+
+            <p>Estimated C:N Ratio:
+                <strong id="ratio"></strong>
+            </p>
+
+            <p>Estimated Compost:
+                <strong id="compost"></strong> tonnes
+            </p>
+
+            <p><strong>Recommendation:</strong></p>
+
+            <p id="recommendation"></p>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+document.getElementById("recyclingForm").addEventListener("submit", async function(e) {
+
+    e.preventDefault();
+
+    const form = new FormData(this);
+    const materials = {};
+
+    for (const [key, value] of form.entries()) {
+        materials[key] = value;
+    }
+
+    document.getElementById("error").textContent = "";
+    document.getElementById("result").style.display = "none";
+
+    try {
+
+        const response = await fetch("/api/recycling/calculate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                materials: materials
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error);
+        }
+
+        document.getElementById("total").textContent = data.total_t;
+        document.getElementById("ratio").textContent = data.blend_cn;
+        document.getElementById("compost").textContent = data.compost_t;
+        document.getElementById("recommendation").textContent = data.recommendation;
+
+        document.getElementById("result").style.display = "block";
+
+    } catch (error) {
+
+        document.getElementById("error").textContent = error.message;
+
+    }
+
+});
+</script>
+
+{% endblock %}

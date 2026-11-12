@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}AGRISENSE - Smart Agriculture{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+    <div class="hero-content">
+        <h1>Welcome to AGRISENSE 🌱</h1>
+
+        <h2>Smart Agriculture Management System</h2>
+
+        <p>
+            Empowering farmers with intelligent technology,
+            machine learning and sustainable agricultural solutions.
+        </p>
+
+        <a href="{{ url_for('dashboard.page') }}" class="btn">
+            Explore Dashboard
+        </a>
+    </div>
+</section>
+
+<section class="modules">
+
+    <h2>Our Smart Agriculture Modules</h2>
+
+    <div class="module-grid">
+
+        <a class="card mod"
+           href="{{ url_for('disease.disease_page') }}">
+            <h3>🌿 Disease Detection</h3>
+            <p>Identify plant diseases and get treatment suggestions.</p>
+        </a>
+
+        <a class="card mod"
+           href="{{ url_for('soil.soil_page') }}">
+            <h3>🌱 Soil Analysis</h3>
+            <p>Analyze soil properties and receive recommendations.</p>
+        </a>
+
+        <a class="card mod"
+           href="{{ url_for('irrigation.irrigation_page') }}">
+            <h3>💧 Smart Irrigation</h3>
+            <p>Get intelligent irrigation recommendations.</p>
+        </a>
+
+        <a class="card mod"
+           href="{{ url_for('yield_prediction.yield_page') }}">
+            <h3>🌾 Yield Prediction</h3>
+            <p>Predict crop production using agricultural data.</p>
+        </a>
+
+        <a class="card mod"
+           href="{{ url_for('zoning.zoning_page') }}">
+            <h3>🗺️ Crop Zoning</h3>
+            <p>Identify suitable zones for different crops.</p>
+        </a>
+
+        <a class="card mod"
+           href="{{ url_for('waste.waste_page') }}">
+            <h3>♻️ Waste Management</h3>
+            <p>Estimate and manage agricultural waste.</p>
+        </a>
+
+        <a class="card mod"
+           href="{{ url_for('recycling.recycling_page') }}">
+            <h3>🌍 Organic Recycling</h3>
+            <p>Explore sustainable organic waste recycling solutions.</p>
+        </a>
+
+    </div>
+
+</section>
+
+{% endblock %}

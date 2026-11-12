@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Waste Management{% endblock %}
+
+{% block content %}
+
+<h1>Agriculture Waste Management ♻️</h1>
+
+<div class="grid g2">
+
+    <div class="card">
+        <h3>Estimate Crop Residue</h3>
+
+        <form id="estForm">
+
+            <label>Crop</label>
+            <select name="crop">
+                {% for c in crops %}
+                <option value="{{ c }}">{{ c|capitalize }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Area (hectares)</label>
+            <input name="area_ha" type="number" value="5">
+
+            <label>Crop Yield (tonnes/hectare)</label>
+            <input name="yield_t_ha" type="number" placeholder="Optional">
+
+            <button type="submit">Estimate Waste</button>
+        </form>
+
+        <div id="estResult"></div>
+    </div>
+
+    <div class="card">
+        <h3>Waste Classification</h3>
+
+        <form id="clsForm">
+
+            <label>Waste Type</label>
+            <select name="waste_type">
+                {% for k, label in waste_types.items() %}
+                <option value="{{ k }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Quantity (tonnes)</label>
+            <input name="quantity_t" type="number" value="10">
+
+            <label>Moisture (%)</label>
+            <input name="moisture" type="number" placeholder="Optional">
+
+            <button type="submit">Find Best Route</button>
+        </form>
+
+        <div id="clsResult"></div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+bindForm("estForm", "/api/waste/estimate", d => `
+    <h2>${d.residue_t} tonnes residue</h2>
+    <p>Surplus: ${d.surplus_t} tonnes</p>
+    <h3>Recommended Uses</h3>
+    ${optionsHtml(d.options)}
+`, "estResult");
+
+bindForm("clsForm", "/api/waste/classify", d => `
+    <h3>${esc(d.label)}</h3>
+    <p>Quantity: ${d.quantity_t} tonnes</p>
+    ${optionsHtml(d.options)}
+`, "clsResult");
+</script>
+{% endblock %}

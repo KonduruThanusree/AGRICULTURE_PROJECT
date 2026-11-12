@@ -1,37 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Field Zoning{% endblock %}
+{% block title %}Field Zoning | AGRISENSE{% endblock %}
 
 {% block content %}
 
 <h1>Field Zoning 🗺️</h1>
 
+<p class="sub">Group agricultural fields based on soil and crop health conditions.</p>
+
 <div class="grid g2">
 
     <div class="card">
+
+        <h2>Generate Field Zones</h2>
+
+        <p>AGRISENSE uses K-Means clustering to group fields according to their sensor readings.</p>
+
         <form id="form">
-
-            <label>Grid Rows</label>
-            <input name="rows" type="number" value="10">
-
-            <label>Grid Columns</label>
-            <input name="cols" type="number" value="12">
-
-            <label>Number of Zones</label>
-            <input name="zones" type="number" value="3">
-
-            <label>Random Seed</label>
-            <input name="seed" type="number" value="7">
 
             <button type="submit">Create Zones</button>
 
         </form>
 
-        <div id="map"></div>
     </div>
 
     <div class="card" id="result">
-        Results will appear here.
+
+        <h2>Zoning Results</h2>
+
+        <p>Click Create Zones to analyse your fields.</p>
+
     </div>
 
 </div>
@@ -39,51 +37,72 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-const COLORS = ["#2e7d32", "#9ccc65", "#fdd835",
-                "#fb8c00", "#e53935", "#6a1b1a"];
 
-document.getElementById("form").addEventListener("submit", async e => {
+<script>
+
+document.getElementById("form").addEventListener("submit", async function(e) {
+
     e.preventDefault();
 
     const out = document.getElementById("result");
-    const map = document.getElementById("map");
+
+    out.innerHTML = "<h2>Analysing field data...</h2>";
 
     try {
-        const d = await postJSON("/api/zoning/analyze",
-                                formToObject(e.target));
 
-        const grid = Array.from(
-            {length: d.rows},
-            () => Array(d.cols).fill(null)
-        );
-
-        d.cells.forEach(c => {
-            grid[c.row][c.col] = c;
+        const response = await fetch("/api/zoning/analyze", {
+            method: "POST"
         });
 
-        map.innerHTML = `
-            <div class="zonegrid"
-                 style="grid-template-columns:repeat(${d.cols},1fr)">
-                ${grid.flat().map(c =>
-                    c ? `<div style="background:${COLORS[c.zone-1]}"
-                              title="Zone ${c.zone}"></div>` : "<div></div>"
-                ).join("")}
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Zoning analysis failed");
+        }
+
+        let html = `
+            <h2>🌱 Field Zoning Completed</h2>
+            <p>${esc(data.message)}</p>
+            <h3>Field-wise Results</h3>
+        `;
+
+        data.zones.forEach(field => {
+
+            html += `
+                <div class="card" style="margin-bottom:15px">
+
+                    <h3>Zone ${field.zone}</h3>
+
+                    <p><strong>Field:</strong> ${esc(field.field)}</p>
+
+                    <p><strong>Soil Moisture:</strong>
+                    ${field.moisture}%</p>
+
+                    <p><strong>Soil pH:</strong>
+                    ${field.ph}</p>
+
+                    <p><strong>NDVI:</strong>
+                    ${field.ndvi}</p>
+
+                </div>
+            `;
+
+        });
+
+        out.innerHTML = html;
+
+    } catch (error) {
+
+        out.innerHTML = `
+            <div class="alert alert-red">
+                <strong>Error:</strong> ${esc(error.message)}
             </div>
         `;
 
-        out.innerHTML = d.zones.map(z => `
-            <div class="card">
-                <h3>Zone ${z.zone} - ${esc(z.label)}</h3>
-                <p>NDVI: ${z.mean_ndvi}</p>
-                <p>Moisture: ${z.mean_moisture}%</p>
-                ${list(z.advice)}
-            </div>
-        `).join("");
-
-    } catch (err) {
-        showError(out, err);
     }
+
 });
+
 </script>
+
 {% endblock %}

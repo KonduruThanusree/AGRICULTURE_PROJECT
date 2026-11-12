@@ -1,48 +1,58 @@
 {% extends "base.html" %}
 
-{% block title %}Yield Prediction{% endblock %}
+{% block title %}Yield Prediction | AGRISENSE{% endblock %}
 
 {% block content %}
 
 <h1>Crop Yield Prediction 🌾</h1>
+<p class="sub">Predict crop production using soil nutrients and rainfall.</p>
 
 <div class="grid g2">
 
     <div class="card">
-        <form id="form">
+
+        <form id="yieldForm">
 
             <label>Crop</label>
-            <select name="crop">
-                {% for c in crops %}
-                <option value="{{ c }}">{{ c|capitalize }}</option>
-                {% endfor %}
+            <select name="crop" required>
+                <option value="">Select Crop</option>
+                <option value="rice">Rice</option>
+                <option value="wheat">Wheat</option>
+                <option value="maize">Maize</option>
+                <option value="cotton">Cotton</option>
+                <option value="sugarcane">Sugarcane</option>
+                <option value="tomato">Tomato</option>
+                <option value="potato">Potato</option>
+                <option value="groundnut">Groundnut</option>
             </select>
 
             <label>Area (hectares)</label>
-            <input name="area_ha" type="number" value="2">
+            <input name="area" type="number" min="0.1" step="0.1" value="2" required>
 
             <label>Rainfall (mm)</label>
-            <input name="rainfall" type="number" value="1000">
-
-            <label>Temperature (°C)</label>
-            <input name="temperature" type="number" value="26">
+            <input name="rainfall" type="number" min="0" value="1000" required>
 
             <label>Nitrogen</label>
-            <input name="nitrogen" type="number" value="100">
+            <input name="nitrogen" type="number" min="0" value="100" required>
+
+            <label>Phosphorus</label>
+            <input name="phosphorus" type="number" min="0" value="50" required>
+
+            <label>Potassium</label>
+            <input name="potassium" type="number" min="0" value="50" required>
 
             <label>Soil pH</label>
-            <input name="ph" type="number" value="6.4">
-
-            <label>NDVI</label>
-            <input name="ndvi" type="number" step="0.01" value="0.7">
+            <input name="ph" type="number" min="0" max="14" step="0.1" value="6.4" required>
 
             <button type="submit">Predict Yield</button>
 
         </form>
+
     </div>
 
-    <div class="card" id="result">
-        Results will appear here.
+    <div class="card" id="yieldResult">
+        <h2>Prediction Results</h2>
+        <p>Enter the details and click Predict Yield.</p>
     </div>
 
 </div>
@@ -50,17 +60,60 @@
 {% endblock %}
 
 {% block scripts %}
+
 <script>
-bindForm("form", "/api/yield/predict", d => `
-    <h2>${d.yield_t_per_ha} tonnes/hectare</h2>
+document.getElementById("yieldForm").addEventListener("submit", async function(e) {
 
-    <p>Expected range:
-    ${d.range_t_per_ha[0]} - ${d.range_t_per_ha[1]}</p>
+    e.preventDefault();
 
-    <h3>Total Yield: ${d.total_tonnes} tonnes</h3>
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
 
-    <h3>Improvement Tips</h3>
-    ${list(d.tips)}
-`);
+    const result = document.getElementById("yieldResult");
+
+    result.innerHTML = "<h2>Calculating prediction...</h2>";
+
+    try {
+
+        const response = await fetch("/api/yield/predict", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        const output = await response.json();
+
+        if (!response.ok) {
+            throw new Error(output.error || "Prediction failed");
+        }
+
+        result.innerHTML = `
+            <h2>Prediction Results 🌾</h2>
+
+            <h3>Predicted Yield</h3>
+            <p>${output.predicted_yield} tonnes/hectare</p>
+
+            <h3>Total Expected Production</h3>
+            <p>${output.total_yield} tonnes</p>
+
+            <h3>Selected Area</h3>
+            <p>${output.area} hectares</p>
+
+            <p>${output.message}</p>
+        `;
+
+    } catch (error) {
+
+        result.innerHTML = `
+            <h3>Error</h3>
+            <p>${error.message}</p>
+        `;
+
+    }
+
+});
 </script>
+
 {% endblock %}

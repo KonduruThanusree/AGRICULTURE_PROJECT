@@ -1,6 +1,6 @@
+
 async function api(url, options = {}) {
     const response = await fetch(url, options);
-
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
@@ -31,33 +31,28 @@ function formToObject(form) {
 }
 
 function esc(value) {
-    return String(value).replace(/[&<>"']/g, c => ({
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
         '"': "&quot;",
         "'": "&#39;"
-    })[c]);
-}
-
-function badge(level) {
-    return `<span class="badge">${esc(level)}</span>`;
-}
-
-function list(items) {
-    return "<ul>" +
-        items.map(item => `<li>${esc(item)}</li>`).join("") +
-        "</ul>";
+    })[char]);
 }
 
 function showError(element, error) {
-    element.innerHTML =
-        `<div class="alert alert-red">${esc(error.message)}</div>`;
+    element.innerHTML = `
+        <p style="color:red;">
+            ${esc(error.message || error)}
+        </p>
+    `;
 }
 
 function bindForm(formId, url, render, outputId = "result") {
     const form = document.getElementById(formId);
     const output = document.getElementById(outputId);
+
+    if (!form || !output) return;
 
     form.addEventListener("submit", async event => {
         event.preventDefault();
@@ -71,14 +66,4 @@ function bindForm(formId, url, render, outputId = "result") {
             showError(output, error);
         }
     });
-}
-
-function optionsHtml(options) {
-    return options.map(option => `
-        <div class="card">
-            <h3>${esc(option.name)}</h3>
-            <p>${esc(option.reason)}</p>
-            <p>${esc(option.output || "")}</p>
-        </div>
-    `).join("");
 }

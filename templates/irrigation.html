@@ -1,53 +1,66 @@
 {% extends "base.html" %}
 
-{% block title %}Smart Irrigation{% endblock %}
+{% block title %}Smart Irrigation | AGRISENSE{% endblock %}
 
 {% block content %}
 
 <h1>Smart Irrigation 💧</h1>
+<p class="sub">Get smart irrigation recommendations for your crops.</p>
 
 <div class="grid g2">
 
     <div class="card">
-        <form id="form">
+        <form id="irrigationForm">
 
             <label>Crop</label>
-            <select name="crop">
-                {% for c in crops %}
-                <option value="{{ c }}">{{ c|capitalize }}</option>
-                {% endfor %}
+            <select name="crop" required>
+                <option value="">Select Crop</option>
+                <option value="rice">Rice</option>
+                <option value="wheat">Wheat</option>
+                <option value="maize">Maize</option>
+                <option value="cotton">Cotton</option>
+                <option value="sugarcane">Sugarcane</option>
+                <option value="tomato">Tomato</option>
+                <option value="potato">Potato</option>
+                <option value="groundnut">Groundnut</option>
             </select>
 
             <label>Growth Stage</label>
-            <select name="stage">
-                {% for s in stages %}
-                <option value="{{ s }}">{{ s|capitalize }}</option>
-                {% endfor %}
+            <select name="stage" required>
+                <option value="">Select Growth Stage</option>
+                <option value="initial">Initial</option>
+                <option value="development">Development</option>
+                <option value="mid">Mid Season</option>
+                <option value="late">Late Season</option>
+                <option value="flowering">Flowering</option>
+                <option value="maturity">Maturity</option>
             </select>
 
             <label>Soil Moisture (%)</label>
-            <input name="moisture" type="number" value="22">
+            <input name="moisture" type="number" min="0" max="100" value="22" required>
 
             <label>Temperature (°C)</label>
-            <input name="temperature" type="number" value="31">
+            <input name="temperature" type="number" value="31" required>
 
             <label>Humidity (%)</label>
-            <input name="humidity" type="number" value="55">
+            <input name="humidity" type="number" min="0" max="100" value="55" required>
 
             <label>Rain Forecast (mm)</label>
-            <input name="rain_forecast" type="number" value="0">
+            <input name="rain_forecast" type="number" min="0" value="0" required>
 
             <label>Area (hectares)</label>
-            <input name="area_ha" type="number" value="2">
+            <input name="area_ha" type="number" min="0.1" step="0.1" value="2" required>
 
             <label>Field</label>
-            <select name="field">
-                {% for f in fields %}
-                <option>{{ f }}</option>
-                {% endfor %}
+            <select name="field" required>
+                <option value="">Select Field</option>
+                <option value="Field A">Field A</option>
+                <option value="Field B">Field B</option>
+                <option value="Field C">Field C</option>
             </select>
 
             <button type="submit">Get Recommendation</button>
+
         </form>
     </div>
 
@@ -60,17 +73,64 @@
 {% endblock %}
 
 {% block scripts %}
+
 <script>
-bindForm("form", "/api/irrigation/recommend", d => `
-    <h2>${d.irrigate ? "💧 Irrigate Now" : "✅ No Irrigation Needed"}</h2>
+document.getElementById("irrigationForm").addEventListener("submit", async function(event) {
 
-    <p>${esc(d.reason)}</p>
+    event.preventDefault();
 
-    ${d.irrigate ? `
-        <h3>Water Required: ${d.amount_mm} mm</h3>
-        <p>Volume: ${d.volume_litres} litres</p>
-        <p>Best time: ${esc(d.best_time)}</p>
-    ` : ""}
-`);
+    const result = document.getElementById("result");
+    const formData = new FormData(this);
+
+    const data = Object.fromEntries(formData.entries());
+
+    result.innerHTML = "<p>Calculating irrigation recommendation...</p>";
+
+    try {
+
+        const response = await fetch("/api/irrigation/calculate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        const d = await response.json();
+
+        if (!response.ok) {
+            throw new Error(d.error || "Unable to calculate recommendation");
+        }
+
+        result.innerHTML = `
+            <h2>${d.irrigate ? "💧 Irrigate Now" : "✅ No Irrigation Needed"}</h2>
+
+            <h3>${d.reason}</h3>
+
+            <p><b>Crop:</b> ${d.crop}</p>
+            <p><b>Growth Stage:</b> ${d.stage}</p>
+            <p><b>Field:</b> ${d.field}</p>
+
+            <hr>
+
+            <h3>Water Required: ${d.amount_mm} mm</h3>
+
+            <p><b>Total Water Volume:</b> ${d.volume_litres} litres</p>
+
+            <p><b>Best Time:</b> ${d.best_time}</p>
+
+            <p><b>Recommendation:</b> ${d.recommendation}</p>
+        `;
+
+    } catch (error) {
+
+        result.innerHTML = `
+            <p style="color:red;">${error.message}</p>
+        `;
+
+    }
+
+});
 </script>
+
 {% endblock %}

@@ -1,59 +1,55 @@
 {% extends "base.html" %}
 
-{% block title %}Waste Management{% endblock %}
+{% block title %}Waste Management | AGRISENSE{% endblock %}
 
 {% block content %}
 
 <h1>Agriculture Waste Management ♻️</h1>
 
+<p class="sub">Find suitable methods to manage agricultural waste.</p>
+
 <div class="grid g2">
 
     <div class="card">
-        <h3>Estimate Crop Residue</h3>
 
-        <form id="estForm">
+        <h3>Waste Management Recommendation</h3>
 
-            <label>Crop</label>
-            <select name="crop">
-                {% for c in crops %}
-                <option value="{{ c }}">{{ c|capitalize }}</option>
-                {% endfor %}
-            </select>
+        <form id="wasteForm">
 
-            <label>Area (hectares)</label>
-            <input name="area_ha" type="number" value="5">
+            <label>Select Waste Type</label>
 
-            <label>Crop Yield (tonnes/hectare)</label>
-            <input name="yield_t_ha" type="number" placeholder="Optional">
-
-            <button type="submit">Estimate Waste</button>
-        </form>
-
-        <div id="estResult"></div>
-    </div>
-
-    <div class="card">
-        <h3>Waste Classification</h3>
-
-        <form id="clsForm">
-
-            <label>Waste Type</label>
-            <select name="waste_type">
-                {% for k, label in waste_types.items() %}
-                <option value="{{ k }}">{{ label }}</option>
-                {% endfor %}
+            <select name="waste_type" required>
+                <option value="">Select Waste Type</option>
+                <option value="crop_residue">Crop Residue</option>
+                <option value="animal_waste">Animal Waste</option>
+                <option value="plastic">Agricultural Plastic</option>
+                <option value="food_waste">Food Waste</option>
+                <option value="leaves">Dry Leaves</option>
             </select>
 
             <label>Quantity (tonnes)</label>
-            <input name="quantity_t" type="number" value="10">
 
-            <label>Moisture (%)</label>
-            <input name="moisture" type="number" placeholder="Optional">
+            <input
+                type="number"
+                name="quantity"
+                min="0.1"
+                step="0.1"
+                value="10"
+                required
+            >
 
-            <button type="submit">Find Best Route</button>
+            <button type="submit">Find Best Recommendation</button>
+
         </form>
 
-        <div id="clsResult"></div>
+    </div>
+
+    <div class="card" id="wasteResult">
+
+        <h3>Recommendation Results</h3>
+
+        <p>Select a waste type and enter its quantity.</p>
+
     </div>
 
 </div>
@@ -61,18 +57,76 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-bindForm("estForm", "/api/waste/estimate", d => `
-    <h2>${d.residue_t} tonnes residue</h2>
-    <p>Surplus: ${d.surplus_t} tonnes</p>
-    <h3>Recommended Uses</h3>
-    ${optionsHtml(d.options)}
-`, "estResult");
 
-bindForm("clsForm", "/api/waste/classify", d => `
-    <h3>${esc(d.label)}</h3>
-    <p>Quantity: ${d.quantity_t} tonnes</p>
-    ${optionsHtml(d.options)}
-`, "clsResult");
+<script>
+
+document.getElementById("wasteForm").addEventListener("submit", async function(e) {
+
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    const data = Object.fromEntries(formData.entries());
+
+    const result = document.getElementById("wasteResult");
+
+    result.innerHTML = "<h3>Finding recommendation...</h3>";
+
+    try {
+
+        const response = await fetch("/api/waste/recommend", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(data)
+
+        });
+
+        const output = await response.json();
+
+        if (!response.ok) {
+            throw new Error(output.error || "Recommendation failed");
+        }
+
+        result.innerHTML = `
+
+            <h2>♻️ Waste Recommendation</h2>
+
+            <p><strong>Waste Type:</strong> ${output.waste_type}</p>
+
+            <p><strong>Quantity:</strong> ${output.quantity_t} tonnes</p>
+
+            <h3>Best Management Method</h3>
+
+            <p>${output.top_option}</p>
+
+            <h3>Other Available Methods</h3>
+
+            <ul>
+                ${output.other_options.map(option => `<li>${option}</li>`).join("")}
+            </ul>
+
+            <h3>Recommendation</h3>
+
+            <p>${output.message}</p>
+
+        `;
+
+    } catch (error) {
+
+        result.innerHTML = `
+            <h3>Error</h3>
+            <p>${error.message}</p>
+        `;
+
+    }
+
+});
+
 </script>
+
 {% endblock %}

@@ -1,76 +1,138 @@
 {% extends "base.html" %}
 
-{% block title %}Soil Intelligence{% endblock %}
+{% block title %}Soil Intelligence | AGRISENSE{% endblock %}
 
 {% block content %}
 
 <h1>Soil Intelligence 🌱</h1>
+
 <p class="sub">Analyse soil nutrients and health.</p>
 
 <div class="grid g2">
 
     <div class="card">
-        <form id="form">
+
+        <form id="soilForm">
 
             <label>Crop</label>
-            <select name="crop">
+
+            <select name="crop" required>
+                <option value="">Select a crop</option>
+
                 {% for c in crops %}
                 <option value="{{ c }}">{{ c|capitalize }}</option>
                 {% endfor %}
+
             </select>
 
             <label>Soil pH</label>
-            <input name="ph" type="number" step="0.1" value="6.2" required>
+            <input name="ph" type="number" step="0.1"
+                   value="6.2" min="0" max="14" required>
 
             <label>Organic Matter (%)</label>
-            <input name="organic_matter" type="number" value="1.8">
+            <input name="organic_matter" type="number"
+                   value="1.8" min="0" step="0.1">
 
             <label>Nitrogen</label>
-            <input name="nitrogen" type="number" value="70" required>
+            <input name="nitrogen" type="number"
+                   value="70" min="0" max="200" required>
 
             <label>Phosphorus</label>
-            <input name="phosphorus" type="number" value="15" required>
+            <input name="phosphorus" type="number"
+                   value="15" min="0" max="200" required>
 
             <label>Potassium</label>
-            <input name="potassium" type="number" value="90" required>
+            <input name="potassium" type="number"
+                   value="90" min="0" max="200" required>
 
             <label>Moisture (%)</label>
-            <input name="moisture" type="number" value="32">
+            <input name="moisture" type="number"
+                   value="32" min="0" max="200" required>
 
             <button type="submit">Analyse Soil</button>
 
         </form>
+
     </div>
 
     <div class="card" id="result">
-        Results will appear here.
+
+        <h2>Soil Analysis Results</h2>
+
+        <p>Enter your soil details and click Analyse Soil.</p>
+
     </div>
 
 </div>
 
 {% endblock %}
 
+
 {% block scripts %}
+
 <script>
-bindForm("form", "/api/soil/analyze", d => `
-    <h2>Soil Score: ${d.score}/100</h2>
-    <h3>${esc(d.rating)}</h3>
 
-    <table>
-        <tr><th>Nutrient</th><th>Value</th><th>Target</th><th>Status</th></tr>
-        ${d.nutrients.map(n => `
-            <tr>
-                <td>${esc(n.nutrient)}</td>
-                <td>${n.value}</td>
-                <td>${n.target}</td>
-                <td>${badge(n.status)}</td>
-            </tr>
-        `).join("")}
-    </table>
+document.getElementById("soilForm").addEventListener("submit", async function(e) {
 
-    <h3>Recommended Actions</h3>
-    ${list(d.actions)}
-    <p>${esc(d.note)}</p>
-`);
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    const data = Object.fromEntries(formData.entries());
+
+    const result = document.getElementById("result");
+
+    result.innerHTML = "<h2>Analysing soil...</h2>";
+
+    try {
+
+        const response = await fetch("/api/soil/analyze", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(data)
+
+        });
+
+        const output = await response.json();
+
+        if (!response.ok) {
+            throw new Error(output.error || "Analysis failed");
+        }
+
+        result.innerHTML = `
+
+            <h2>Soil Analysis Results 🌱</h2>
+
+            <h3>Soil Health</h3>
+            <p>${output.health}</p>
+
+            <h3>Moisture Status</h3>
+            <p>${output.moisture_status}</p>
+
+            <h3>Nutrient Status</h3>
+            <p>${output.nutrient_status}</p>
+
+            <h3>Recommendation</h3>
+            <p>${output.recommendation}</p>
+
+        `;
+
+    } catch (error) {
+
+        result.innerHTML = `
+            <h3>Error</h3>
+            <p>${error.message}</p>
+        `;
+
+    }
+
+});
+
 </script>
+
 {% endblock %}

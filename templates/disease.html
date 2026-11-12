@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Disease Detection{% endblock %}
+{% block title %}Disease Detection | AGRISENSE{% endblock %}
 
 {% block content %}
 
@@ -10,22 +10,35 @@
 <div class="grid g2">
 
     <div class="card">
-        <form id="form">
+
+        <form id="form" enctype="multipart/form-data">
 
             <label>Select Leaf Image</label>
 
-            <input type="file" id="image" name="image"
-                   accept="image/png,image/jpeg,image/webp" required>
+            <input
+                type="file"
+                id="image"
+                name="image"
+                accept="image/png,image/jpeg,image/webp"
+                required
+            >
 
-            <img id="preview" style="display:none;max-width:100%;margin-top:15px">
+            <img
+                id="preview"
+                style="display:none;max-width:100%;margin-top:15px;border-radius:10px"
+            >
 
             <button type="submit">Analyse Image</button>
 
         </form>
+
     </div>
 
     <div class="card" id="result">
-        <p class="muted">Analysis results will appear here.</p>
+
+        <h2>Analysis Results</h2>
+        <p>Upload a leaf image to see the results.</p>
+
     </div>
 
 </div>
@@ -33,42 +46,87 @@
 {% endblock %}
 
 {% block scripts %}
+
 <script>
+
 const input = document.getElementById("image");
 const preview = document.getElementById("preview");
 
-input.addEventListener("change", () => {
-    const file = input.files[0];
+input.addEventListener("change", function() {
+
+    const file = this.files[0];
 
     if (file) {
         preview.src = URL.createObjectURL(file);
         preview.style.display = "block";
     }
+
 });
 
-document.getElementById("form").addEventListener("submit", async e => {
+document.getElementById("form").addEventListener("submit", async function(e) {
+
     e.preventDefault();
 
-    const out = document.getElementById("result");
-    out.innerHTML = "Analysing...";
+    const result = document.getElementById("result");
+
+    const file = input.files[0];
+
+    if (!file) {
+        result.innerHTML = "<p>Please select a leaf image.</p>";
+        return;
+    }
+
+    result.innerHTML = "<h3>Analysing image... Please wait.</h3>";
 
     try {
-        const data = await api("/api/disease/detect", {
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const response = await fetch("/api/disease/predict", {
             method: "POST",
-            body: new FormData(e.target)
+            body: formData
         });
 
-        out.innerHTML = `
-            <h2>${esc(data.disease)}</h2>
-            <p>Severity: ${esc(data.severity)}</p>
-            <p>Confidence: ${Math.round(data.confidence * 100)}%</p>
-            <h3>Recommended Treatment</h3>
-            ${list(data.treatment)}
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Image analysis failed");
+        }
+
+        result.innerHTML = `
+
+            <h2>🌿 Analysis Results</h2>
+
+            <h3>Disease Detection</h3>
+            <p>${esc(data.disease)}</p>
+
+            <h3>Severity</h3>
+            <p>${esc(data.severity)}</p>
+
+            <h3>Confidence</h3>
+            <p>${Number(data.confidence).toFixed(1)}%</p>
+
+            <h3>Recommended Action</h3>
+            <p>${esc(data.recommendation)}</p>
+
         `;
 
-    } catch (err) {
-        showError(out, err);
+    } catch (error) {
+
+        result.innerHTML = `
+            <div class="alert alert-red">
+                <strong>Analysis Error:</strong>
+                ${esc(error.message)}
+            </div>
+        `;
+
+        console.error("Disease detection error:", error);
+
     }
+
 });
+
 </script>
+
 {% endblock %}

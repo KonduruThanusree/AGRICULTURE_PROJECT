@@ -1,13 +1,22 @@
 from flask import Blueprint, render_template, request, jsonify
 
-from database.db import latest_readings
-
 bp = Blueprint("soil", __name__)
+
+CROPS = [
+    "rice",
+    "wheat",
+    "maize",
+    "cotton",
+    "sugarcane",
+    "tomato",
+    "potato",
+    "groundnut"
+]
 
 
 @bp.route("/soil")
 def soil_page():
-    return render_template("soil.html")
+    return render_template("soil.html", crops=CROPS)
 
 
 @bp.route("/api/soil/analyze", methods=["POST"])
@@ -22,9 +31,9 @@ def soil_analyze():
         ph = float(data.get("ph", 0))
         moisture = float(data.get("moisture", 0))
 
-        if not all(map(lambda x: 0 <= x <= 200, [
+        if not all(0 <= x <= 200 for x in [
             nitrogen, phosphorus, potassium, moisture
-        ])):
+        ]):
             return jsonify({"error": "Invalid soil values"}), 400
 
         if not 0 <= ph <= 14:
@@ -59,4 +68,6 @@ def soil_analyze():
         })
 
     except (ValueError, TypeError):
-        return jsonify({"error": "Please enter valid numeric values"}), 400
+        return jsonify({
+            "error": "Please enter valid numeric values"
+        }), 400
